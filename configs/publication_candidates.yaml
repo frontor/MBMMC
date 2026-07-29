@@ -1,0 +1,164 @@
+version: 1
+output_root: outputs/publication_candidates
+
+# Set before execution:
+#   export REF_CSV=/absolute/path/to/reference.csv
+#   export META=/absolute/path/to/meta.tsv
+#   export DEVICE=cpu   # or cuda
+models:
+  rf:
+    module: mbmmc.train_rf
+    fixed_args:
+      ref_csv: ${REF_CSV}
+      meta: ${META}
+      model: rf
+      equal_mode: negative
+      feature_select: f_classif_topk
+      cv_mode: nested
+      outer_folds: 5
+      inner_folds: 2
+      search_iters: 40
+      scoring: f1_macro
+      cv_group_mode: none
+      random_state: 42
+      n_jobs: -1
+    candidates:
+      - id: RF0_current_anchor
+        beta_threshold: 0.60
+        mask_alg: mcar
+        mask_rate: 0.25
+        mask_on: both
+        topk: 20000
+        corr_filter: 0.8
+      - id: RF1_threshold_0_45
+        beta_threshold: 0.45
+        mask_alg: mcar
+        mask_rate: 0.25
+        mask_on: both
+        topk: 20000
+        corr_filter: 0.8
+      - id: RF2_threshold_0_55
+        beta_threshold: 0.55
+        mask_alg: mcar
+        mask_rate: 0.25
+        mask_on: both
+        topk: 20000
+        corr_filter: 0.8
+      - id: RF3_threshold_0_65
+        beta_threshold: 0.65
+        mask_alg: mcar
+        mask_rate: 0.25
+        mask_on: both
+        topk: 20000
+        corr_filter: 0.8
+      - id: RF4_train_only_mask
+        beta_threshold: 0.60
+        mask_alg: mcar
+        mask_rate: 0.25
+        mask_on: train
+        topk: 20000
+        corr_filter: 0.8
+      - id: RF5_beta_rate_mild
+        beta_threshold: 0.60
+        mask_alg: mcar_beta_rate
+        mask_rate: 0.25
+        mask_on: both
+        topk: 20000
+        corr_filter: 0.8
+      - id: RF6_mcar_upper_bound
+        beta_threshold: 0.60
+        mask_alg: mcar
+        mask_rate: 0.50
+        mask_on: both
+        topk: 20000
+        corr_filter: 0.8
+
+  crossnn:
+    module: mbmmc.train_crossnn
+    fixed_args:
+      ref_csv: ${REF_CSV}
+      meta: ${META}
+      equal_mode: negative
+      feature_select: none
+      preset: tuned
+      cv_folds: 5
+      cv_group_mode: none
+      tune_metric: macro_f1
+      tune_trials: 30
+      tune_eval_keep_fraction: 1.0
+      tune_epoch_grid: "800,1000"
+      tune_lr_min: 5.0e-5
+      tune_lr_max: 5.0e-4
+      tune_wd_min: 1.0e-6
+      tune_wd_max: 1.0e-3
+      tune_batch_sizes: "4,8,16"
+      max_epochs: 1000
+      patience: 50
+      random_state: 42
+      device: ${DEVICE}
+    candidates:
+      - id: C0_current_anchor
+        beta_threshold: 0.60
+        tune_keep_grid: "0.005"
+      - id: C1_threshold_0_55
+        beta_threshold: 0.55
+        tune_keep_grid: "0.005"
+      - id: C2_less_sparse_0_01
+        beta_threshold: 0.60
+        tune_keep_grid: "0.01"
+      - id: C3_less_sparse_0_025
+        beta_threshold: 0.60
+        tune_keep_grid: "0.025"
+      - id: C4_threshold_0_55_keep_0_01
+        beta_threshold: 0.55
+        tune_keep_grid: "0.01"
+
+  mpcnet:
+    module: mbmmc.train_mpcnet
+    fixed_args:
+      ref_csv: ${REF_CSV}
+      meta: ${META}
+      feature_select: technical_only_qc
+      input_compression: hash
+      min_observed_per_feature: 3
+      min_observed_fraction: 0.0
+      min_variance_observed: 0.0
+      max_missing_fraction: 1.0
+      train_mask_keep_fractions: "1.0,0.75,0.50"
+      train_mask_aug_prob: 0.50
+      temperature_scaling: "on"
+      temperature_min: 1.0
+      epochs: 80
+      batch_size: 64
+      lr: 0.001
+      weight_decay: 0.0001
+      patience: 12
+      final_refit: all
+      seed: 17
+      device: ${DEVICE}
+    candidates:
+      - id: M0_raw_32k_noaug
+        value_mode: raw
+        beta_threshold: 0.60
+        hash_bins: 32768
+        train_mask_aug: "off"
+      - id: M1_raw_32k_mildmask
+        value_mode: raw
+        beta_threshold: 0.60
+        hash_bins: 32768
+        train_mask_aug: mixed
+      - id: M2_ternary_32k_mildmask
+        value_mode: ternary
+        beta_threshold: 0.60
+        hash_bins: 32768
+        train_mask_aug: mixed
+      - id: M3_hybrid_32k_mildmask
+        value_mode: hybrid
+        beta_threshold: 0.60
+        hash_bins: 32768
+        train_mask_aug: mixed
+      - id: M4_hybrid_65k_mildmask
+        value_mode: hybrid
+        beta_threshold: 0.60
+        hash_bins: 65536
+        train_mask_aug: mixed

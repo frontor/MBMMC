@@ -1,0 +1,74 @@
+version: 1
+output_root: outputs/full_grid_example
+
+# This file demonstrates Cartesian expansion. It is intentionally large.
+# Preview first:
+#   python -m tools.run_grid --config configs/full_grid_example.yaml --dry-run --allow-unresolved --limit 3
+models:
+  rf:
+    module: mbmmc.train_rf
+    fixed_args:
+      ref_csv: ${REF_CSV}
+      meta: ${META}
+      model: rf
+      equal_mode: negative
+      feature_select: f_classif_topk
+      mask_alg: mcar
+      cv_mode: nested
+      outer_folds: 5
+      inner_folds: 2
+      search_iters: 40
+      scoring: f1_macro
+      random_state: 42
+      n_jobs: -1
+    grid:
+      beta_threshold: [0.50, 0.55, 0.60]
+      topk: [10000, 20000, 50000]
+      corr_filter: [0.0, 0.8, 0.9]
+      mask_rate: [0.10, 0.25, 0.50]
+      mask_on: [train, both]
+
+  crossnn:
+    module: mbmmc.train_crossnn
+    fixed_args:
+      ref_csv: ${REF_CSV}
+      meta: ${META}
+      preset: tuned
+      equal_mode: negative
+      feature_select: none
+      cv_folds: 3
+      tune_metric: macro_f1
+      tune_trials: 30
+      tune_epoch_grid: "800,1000"
+      tune_lr_min: 5.0e-5
+      tune_lr_max: 5.0e-4
+      tune_batch_sizes: "4,8,16"
+      max_epochs: 1000
+      patience: 50
+      random_state: 42
+      device: ${DEVICE}
+    grid:
+      beta_threshold: [0.50, 0.55, 0.60]
+      tune_keep_grid: ["0.0025", "0.005", "0.01"]
+
+  mpcnet:
+    module: mbmmc.train_mpcnet
+    fixed_args:
+      ref_csv: ${REF_CSV}
+      meta: ${META}
+      feature_select: technical_only_qc
+      input_compression: hash
+      train_mask_keep_fractions: "1.0,0.75,0.50"
+      train_mask_aug_prob: 0.50
+      temperature_scaling: "on"
+      temperature_min: 1.0
+      epochs: 80
+      patience: 12
+      final_refit: all
+      seed: 17
+      device: ${DEVICE}
+    grid:
+      value_mode: [raw, ternary, hybrid]
+      beta_threshold: [0.55, 0.60]
+      hash_bins: [32768, 65536]
+      train_mask_aug: ["off", mixed]

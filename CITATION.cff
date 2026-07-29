@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this software, cite the software release and the associated paper."
+title: "MBMMC: RF, crossNN, and MPCNet methylation classifier training code"
+type: software
+version: 1.0.0
+date-released: 2026-07-28
+authors:
+  - family-names: "Guangjian"
+    given-names: "Liu"
+    affiliation: "Chinese Institute for Brain Research, Beijing"
+repository-code: "https://github.com/frontor/MBMMC"
+url: "https://github.com/frontor/MBMMC"
+license: "PolyForm-Noncommercial-1.0.0"
+keywords:
+  - DNA methylation
+  - tumor classification
+  - random forest
+  - neural network
+  - bioinformatics
